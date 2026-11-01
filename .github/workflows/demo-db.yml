@@ -1,7 +1,8 @@
 # Migrates and (re)seeds the hosted demo database, so the live demo always starts
 # from clean data with the demo accounts. Run it once after creating the database,
 # and it also resets weekly (visitors can change the data).
-# Needs the repository secret DEMO_MIGRATION_DATABASE_URL (Neon owner connection).
+# Needs the repository secrets DEMO_MIGRATION_DATABASE_URL (Neon *unpooled* URL) and
+# DEMO_APP_DB_PASSWORD (same value as APP_DB_PASSWORD on Render; creates the app role).
 name: Reset demo database
 
 on:
@@ -18,6 +19,7 @@ jobs:
     if: ${{ vars.DEMO_DB_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
     env:
       MIGRATION_DATABASE_URL: ${{ secrets.DEMO_MIGRATION_DATABASE_URL }}
+      APP_DB_PASSWORD: ${{ secrets.DEMO_APP_DB_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6

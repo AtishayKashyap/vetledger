@@ -8,11 +8,17 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { migrationDatabaseUrl } from "./db.js";
 
 const LOCK_ID = 7_401_337;
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "migrations");
 
-export async function migrate(ownerUrl: string, appRole: string, log = console.log): Promise<string[]> {
+export async function migrate(
+  ownerUrl: string,
+  appRole: string,
+  log = console.log,
+  appPassword?: string,
+): Promise<string[]> {
   if (!/^[a-z_][a-z0-9_]*$/.test(appRole)) throw new Error(`invalid role name ${appRole}`);
   const client = new pg.Client({ connectionString: ownerUrl });
   await client.connect();
@@ -47,12 +53,46 @@ export async function migrate(ownerUrl: string, appRole: string, log = console.l
       applied.push(file);
       log(`applied ${file}`);
     }
+    if (appPassword) await ensureAppRole(client, appRole, appPassword);
     await grantAppRole(client, appRole);
   } finally {
     await client.query("SELECT pg_advisory_unlock($1)", [LOCK_ID]).catch(() => undefined);
     await client.end();
   }
   return applied;
+}
+
+/**
+ * Create (or re-password) the runtime role. Hosted Postgres such as Neon hands you only
+ * an owner role, so the non-owner role RLS depends on is provisioned here. format(%I,%L)
+ * quotes the identifier and password safely.
+ */
+async function ensureAppRole(client: pg.Client, role: string, password: string): Promise<void> {
+  const exists = await client.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [role]);
+  const stmt = exists.rowCount
+    ? "SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L', $1::text, $2::text) AS q"
+    : "SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', $1::text, $2::text) AS q";
+  const { rows } = await client.query<{ q: string }>(stmt, [role, password]);
+  const create = rows[0]?.q;
+  if (!create) throw new Error("could not build the role statement");
+  try {
+    await client.query(create);
+  } catch (err) {
+    if ((err as { code?: string }).code === "42501") {
+      throw new Error(
+        `the migration role cannot create "${role}" (needs CREATEROLE; Neon's default owner role has it). ` +
+          "Create the role manually with deploy/neon-setup.sql, or unset APP_DB_PASSWORD.",
+        { cause: err },
+      );
+    }
+    throw err;
+  }
+  const grant = await client.query<{ q: string }>(
+    "SELECT format('GRANT CONNECT ON DATABASE %I TO %I', current_database(), $1::text) AS q",
+    [role],
+  );
+  const grantSql = grant.rows[0]?.q;
+  if (grantSql) await client.query(grantSql);
 }
 
 /** Least privilege for the runtime role. Idempotent, so it runs on every deploy. */
@@ -73,9 +113,8 @@ async function grantAppRole(client: pg.Client, role: string): Promise<void> {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const url = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
-  if (!url) throw new Error("MIGRATION_DATABASE_URL or DATABASE_URL is required");
-  migrate(url, process.env.APP_DB_ROLE ?? "vetledger_app")
+  const url = migrationDatabaseUrl(process.env);
+  migrate(url, process.env.APP_DB_ROLE ?? "vetledger_app", console.log, process.env.APP_DB_PASSWORD)
     .then((a) => console.log(a.length ? `done (${a.length} applied)` : "up to date"))
     .catch((e: unknown) => {
       console.error(e);

@@ -5,14 +5,25 @@ const tracing = startTracing();
 const { Redis } = await import("ioredis");
 const { createApp } = await import("./app.js");
 const { loadConfig } = await import("./config.js");
-const { createDb } = await import("./db.js");
+const { checkRlsEnforced, createDb, runtimeDatabaseUrl } = await import("./db.js");
 const { createReminderQueue, startReminderWorker, webhookDeliver } = await import("./jobs/reminders.js");
 const { createLogger } = await import("./observability/logger.js");
 const { createMetrics } = await import("./observability/metrics.js");
 
 const config = loadConfig();
 const logger = createLogger(config.LOG_LEVEL);
-const { db } = createDb(config.DATABASE_URL, config.DB_POOL_MAX);
+const { db } = createDb(runtimeDatabaseUrl(config.DATABASE_URL, config.APP_DB_ROLE, config.APP_DB_PASSWORD), config.DB_POOL_MAX);
+
+// Refuse to run in production with a role that would silently bypass tenant isolation.
+const rls = await checkRlsEnforced(db);
+if (!rls.enforced) {
+  const msg = `database role "${rls.role}" bypasses row-level security (superuser=${rls.superuser}, bypassrls=${rls.bypassRls}, owns tables=${rls.ownsTenantTables}); set APP_DB_PASSWORD so the API connects as ${config.APP_DB_ROLE}`;
+  if (config.NODE_ENV === "production") {
+    logger.fatal({ rls }, msg);
+    process.exit(1);
+  }
+  logger.warn({ rls }, msg);
+}
 // BullMQ requires maxRetriesPerRequest: null on its connections.
 const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null });
 const connection = { url: config.REDIS_URL };

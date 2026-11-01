@@ -11,13 +11,26 @@ browser ──> Vercel (React app, apps/web)
 ```
 
 ## 1. Neon: PostgreSQL
-1. Sign up at https://neon.tech and create a project named `vetledger`, choosing the region closest to you (e.g. *AWS Asia Pacific (Singapore)*).
-2. Open **SQL Editor** and paste in [`deploy/neon-setup.sql`](../deploy/neon-setup.sql). Replace `CHANGE_ME` with a long random password (letters and digits only), then click **Run**.
-3. Open **Dashboard → Connect** and copy the connection string. It looks like
-   `postgresql://neondb_owner:XXXX@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`.
-   If it ends with `&channel_binding=require`, delete that part.
-   - This is your **MIGRATION URL** (the owner role).
-   - Make a copy where `neondb_owner:XXXX` is replaced with `vetledger_app:<your password>`. That is your **APP URL**.
+
+**With the Neon CLI** (the project is already linked: `neon.ts` + `.neon`):
+```bash
+npm i -g neon@latest
+neon login
+neon deploy          # provisions Postgres and writes DATABASE_URL + DATABASE_URL_UNPOOLED into .env
+```
+Then in `.env`, **delete the local `MIGRATION_DATABASE_URL` line** (it would override Neon's) and add `APP_DB_PASSWORD=$(openssl rand -hex 24)`.
+
+**Or in the console:** create a project at https://neon.tech and copy the **pooled** and **direct** connection strings from *Dashboard → Connect* (toggle "Connection pooling").
+
+Either way, you end up with three values:
+
+| Variable | Value | Used for |
+|---|---|---|
+| `DATABASE_URL` | pooled string (host contains `-pooler`) | API traffic (PgBouncer, transaction mode) |
+| `DATABASE_URL_UNPOOLED` | direct string | migrations (they take a session advisory lock) |
+| `APP_DB_PASSWORD` | a long random string you generate | migrations create the `vetledger_app` role with it; the API connects as that role |
+
+Why the extra role? Both Neon strings log in as the database **owner**, and owners bypass row-level security. The API refuses to start in production with such a role. With `APP_DB_PASSWORD` set, it connects to the pooled host as `vetledger_app`, so tenant isolation is enforced by Postgres. (`deploy/neon-setup.sql` creates the role manually if you prefer.)
 
 ## 2. Upstash: Redis
 1. Sign up at https://upstash.com and choose **Create Database**: type *Redis*, same region as Neon, free plan.
@@ -26,7 +39,8 @@ browser ──> Vercel (React app, apps/web)
 ## 3. Seed the demo database (GitHub Actions)
 Render's free plan has no shell, so the database is seeded from GitHub Actions.
 1. In this repo, go to **Settings → Secrets and variables → Actions → New repository secret**:
-   - Name: `DEMO_MIGRATION_DATABASE_URL`, value: your **MIGRATION URL**.
+   - `DEMO_MIGRATION_DATABASE_URL`: your **direct** (`DATABASE_URL_UNPOOLED`) string.
+   - `DEMO_APP_DB_PASSWORD`: your `APP_DB_PASSWORD`.
 2. Go to the **Actions** tab, select **Reset demo database**, click **Run workflow**, and wait for the green tick.
 3. Optional: to re-seed automatically every Monday (undoing whatever visitors changed), add a repository **variable** `DEMO_DB_ENABLED` = `true` under the same settings page, on the *Variables* tab.
 
@@ -36,8 +50,9 @@ Render's free plan has no shell, so the database is seeded from GitHub Actions.
 
    | Key | Value |
    |---|---|
-   | `DATABASE_URL` | your **APP URL** |
-   | `MIGRATION_DATABASE_URL` | your **MIGRATION URL** |
+   | `DATABASE_URL` | Neon **pooled** string |
+   | `DATABASE_URL_UNPOOLED` | Neon **direct** string |
+   | `APP_DB_PASSWORD` | Render generates one: **copy it into the `DEMO_APP_DB_PASSWORD` GitHub secret too** (or replace it with yours) |
    | `REDIS_URL` | the Upstash `rediss://` URL |
    | `REMINDER_WEBHOOK_URL` | leave empty (reminders are logged), or use a free https://webhook.site URL to watch them arrive |
    | `OTEL_EXPORTER_OTLP_ENDPOINT` / `_HEADERS` | leave empty |

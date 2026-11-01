@@ -5,3 +5,6 @@ coverage/
 *.log
 apps/web/playwright-report/
 apps/web/test-results/
+.neon
+.env.local
+.env.backup-local

@@ -10,8 +10,15 @@ const schema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   /** Connection used by the API: the non-owner role that is subject to RLS. */
   DATABASE_URL: z.string().url(),
-  /** Owner connection, used only by migrations. Defaults to DATABASE_URL. */
+  /** Direct (unpooled) connection, as written by `neon env pull`. Used for migrations. */
+  DATABASE_URL_UNPOOLED: z.string().url().optional(),
+  /** Owner connection, used only by migrations. Defaults to DATABASE_URL_UNPOOLED, then DATABASE_URL. */
   MIGRATION_DATABASE_URL: z.string().url().optional(),
+  /**
+   * Password for APP_DB_ROLE. When set, the API connects to DATABASE_URL's host as
+   * APP_DB_ROLE instead of the URL's (owner) user, and migrations create/update the role.
+   */
+  APP_DB_PASSWORD: z.string().min(16, "APP_DB_PASSWORD must be at least 16 characters").optional(),
   /** Role that migrations grant table privileges to. */
   APP_DB_ROLE: z.string().regex(/^[a-z_][a-z0-9_]*$/).default("vetledger_app"),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),

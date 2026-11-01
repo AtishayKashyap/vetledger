@@ -83,7 +83,10 @@ export function createDb(
     // Fail fast instead of piling up requests when the database is unreachable.
     connectionTimeoutMillis: 5_000,
     idleTimeoutMillis: 30_000,
-    statement_timeout: 10_000,
+    // Client-side backstop only. The server-side statement timeout is set per
+    // transaction (see withTenant): Neon's pooler (PgBouncer, transaction mode) rejects
+    // `statement_timeout` as a connection startup parameter.
+    query_timeout: 15_000,
   });
   return {
     db: new Kysely<DB>({
@@ -103,7 +106,68 @@ export function createDb(
  */
 export async function withTenant<T>(db: Db, clinicId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return db.transaction().execute(async (tx) => {
-    await sql`SELECT set_config('app.clinic_id', ${clinicId}, true)`.execute(tx);
+    await tenantScope(clinicId).execute(tx);
     return fn(tx);
   });
+}
+
+export const STATEMENT_TIMEOUT = "10s";
+
+/**
+ * Tenant + statement timeout for the current transaction, in ONE round trip. Both are
+ * transaction-local (`is_local = true`), which is exactly what a transaction-mode pooler
+ * (Neon's `-pooler` endpoint) requires: nothing leaks to the next client of the backend.
+ */
+export function tenantScope(clinicId: string) {
+  return sql`SELECT set_config('app.clinic_id', ${clinicId}, true), set_config('statement_timeout', ${STATEMENT_TIMEOUT}, true)`;
+}
+
+/**
+ * The runtime connection string. Neon's `DATABASE_URL` authenticates as the database
+ * owner, which BYPASSES row-level security. When APP_DB_PASSWORD is set, keep Neon's
+ * (pooled) host and connect as the non-owner app role instead.
+ */
+export function runtimeDatabaseUrl(databaseUrl: string, appRole: string, appPassword?: string): string {
+  if (!appPassword) return databaseUrl;
+  const url = new URL(databaseUrl);
+  url.username = appRole;
+  url.password = appPassword;
+  return url.toString();
+}
+
+/** Owner connection for migrations/seeding: must be DIRECT (session advisory lock). */
+export function migrationDatabaseUrl(env: NodeJS.ProcessEnv): string {
+  const url = env.MIGRATION_DATABASE_URL ?? env.DATABASE_URL_UNPOOLED ?? env.DATABASE_URL;
+  if (!url) throw new Error("set MIGRATION_DATABASE_URL, DATABASE_URL_UNPOOLED or DATABASE_URL");
+  return url;
+}
+
+export interface RlsReport {
+  role: string;
+  superuser: boolean;
+  bypassRls: boolean;
+  ownsTenantTables: boolean;
+  enforced: boolean;
+}
+
+/**
+ * Tenant isolation is only real if the runtime role can't bypass RLS. Superusers,
+ * BYPASSRLS roles and table owners (RLS isn't FORCEd) all skip the policies, which is
+ * the default if you point the app at a provider's owner connection string.
+ */
+export async function checkRlsEnforced(db: Db): Promise<RlsReport> {
+  const { rows } = await sql<{ role: string; superuser: boolean; bypass_rls: boolean; owns: boolean }>`
+    SELECT current_user AS role, r.rolsuper AS superuser, r.rolbypassrls AS bypass_rls,
+           EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'animals'
+                   AND tableowner = current_user) AS owns
+    FROM pg_roles r WHERE r.rolname = current_user`.execute(db);
+  const r = rows[0];
+  if (!r) throw new Error("could not read the current database role");
+  return {
+    role: r.role,
+    superuser: r.superuser,
+    bypassRls: r.bypass_rls,
+    ownsTenantTables: r.owns,
+    enforced: !r.superuser && !r.bypass_rls && !r.owns,
+  };
 }

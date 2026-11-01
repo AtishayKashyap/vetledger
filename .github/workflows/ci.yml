@@ -37,7 +37,7 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Create database roles (owner for migrations, app for runtime/RLS)
-        run: psql postgres://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE vetledger_owner LOGIN PASSWORD 'owner'" -c "CREATE ROLE vetledger_app LOGIN PASSWORD 'app'" -c "CREATE DATABASE vetledger_test OWNER vetledger_owner" && psql postgres://postgres:postgres@localhost:5432/vetledger_test -c "CREATE EXTENSION pgcrypto" -c "CREATE EXTENSION citext"
+        run: psql postgres://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE vetledger_owner LOGIN CREATEROLE PASSWORD 'owner'" -c "CREATE ROLE vetledger_app LOGIN PASSWORD 'app'" -c "CREATE DATABASE vetledger_test OWNER vetledger_owner" && psql postgres://postgres:postgres@localhost:5432/vetledger_test -c "CREATE EXTENSION pgcrypto" -c "CREATE EXTENSION citext"
       - run: pnpm lint
       - run: pnpm typecheck
       - name: Unit + integration tests (real Postgres 16 + Redis 7, coverage gate)
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: psql postgres://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE vetledger_owner LOGIN PASSWORD 'owner'" -c "CREATE ROLE vetledger_app LOGIN PASSWORD 'app'" -c "CREATE DATABASE vetledger OWNER vetledger_owner" && psql postgres://postgres:postgres@localhost:5432/vetledger -c "CREATE EXTENSION pgcrypto" -c "CREATE EXTENSION citext"
+      - run: psql postgres://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE vetledger_owner LOGIN CREATEROLE PASSWORD 'owner'" -c "CREATE ROLE vetledger_app LOGIN PASSWORD 'app'" -c "CREATE DATABASE vetledger OWNER vetledger_owner" && psql postgres://postgres:postgres@localhost:5432/vetledger -c "CREATE EXTENSION pgcrypto" -c "CREATE EXTENSION citext"
       - run: pnpm db:migrate && pnpm db:seed
       - run: pnpm --filter @vetledger/api build
       - name: Start API

@@ -1,5 +1,5 @@
 # Render Blueprint, free tier. External free services:
-#   Postgres -> Neon (run deploy/neon-setup.sql once; see docs/DEPLOY.md)
+#   Postgres -> Neon (`neon deploy` or the console; see docs/DEPLOY.md)
 #   Redis    -> Upstash (use the rediss:// URL)
 # One web service runs API + reminder worker (RUN_WORKER=true), so only one free
 # instance is needed. Free instances sleep when idle; BullMQ's job scheduler state lives
@@ -13,8 +13,9 @@ services:
     plan: free
     healthCheckPath: /healthz
     envVars:
-      - { key: DATABASE_URL, sync: false }
-      - { key: MIGRATION_DATABASE_URL, sync: false }
+      - { key: DATABASE_URL, sync: false }           # Neon pooled URL (owner creds are fine)
+      - { key: DATABASE_URL_UNPOOLED, sync: false }  # Neon direct URL: migrations on boot
+      - { key: APP_DB_PASSWORD, generateValue: true } # API connects as vetledger_app (RLS enforced)
       - { key: REDIS_URL, sync: false }
       - { key: JWT_SECRET, generateValue: true }
       - { key: COOKIE_SECURE, value: "true" }

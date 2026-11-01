@@ -8,7 +8,7 @@
  */
 import { sql } from "kysely";
 import { hashPassword } from "./auth/password.js";
-import { createDb, type Db } from "./db.js";
+import { createDb, migrationDatabaseUrl, type Db } from "./db.js";
 
 export const DEMO_PASSWORD = "vetledger-demo";
 
@@ -133,9 +133,7 @@ export async function seed(db: Db, opts: { animalsPerClinic?: number } = {}): Pr
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const url = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
-  if (!url) throw new Error("MIGRATION_DATABASE_URL is required");
-  const { db } = createDb(url, 2);
+  const { db } = createDb(migrationDatabaseUrl(process.env), 2);
   await seed(db);
   await db.destroy();
   console.log(`seeded. log in as admin@sunrise.vet / vet@sunrise.vet / tech@sunrise.vet, password: ${DEMO_PASSWORD}`);

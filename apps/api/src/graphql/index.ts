@@ -14,7 +14,7 @@ import type { RequestHandler } from "express";
 import { GraphQLError, type ASTNode, type ValidationRule } from "graphql";
 import { sql } from "kysely";
 import type { ControlledTransaction, Kysely } from "kysely";
-import type { DB, Db } from "../db.js";
+import { tenantScope, type DB, type Db } from "../db.js";
 import { todayUtc } from "../services/inventory.js";
 
 export const typeDefs = /* GraphQL */ `
@@ -269,7 +269,7 @@ export function depthLimit(max: number): ValidationRule {
 export async function openTenantReadTx(db: Db, clinicId: string): Promise<ControlledTransaction<DB>> {
   const tx = await db.startTransaction().setAccessMode("read only").execute();
   try {
-    await sql`SELECT set_config('app.clinic_id', ${clinicId}, true)`.execute(tx);
+    await tenantScope(clinicId).execute(tx);
   } catch (err) {
     await tx.rollback().execute();
     throw err;
