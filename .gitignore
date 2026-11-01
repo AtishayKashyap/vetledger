@@ -8,3 +8,4 @@ apps/web/test-results/
 .neon
 .env.local
 .env.backup-local
+dump.rdb
