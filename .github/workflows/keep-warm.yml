@@ -1,0 +1,22 @@
+name: Keep demo warm
+
+# Render's free plan sleeps after 15 idle minutes, and the first request then takes
+# ~50 s. Pinging every 10 minutes during Indian working hours (08:30-23:30 IST) keeps
+# the live demo responsive while staying well inside the free plan's 750
+# instance-hours a month (~470 h used).
+on:
+  schedule:
+    - cron: "*/10 3-17 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping API health check
+        run: |
+          curl --fail --silent --show-error --max-time 120 --retry 2 --retry-delay 10 \
+            https://vetledger-api.onrender.com/healthz
