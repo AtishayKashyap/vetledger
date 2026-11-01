@@ -4,6 +4,12 @@ const bool = z
   .enum(["true", "false", "1", "0"])
   .transform((v) => v === "true" || v === "1");
 
+export function requireTlsForUpstash(url: string): string {
+  const u = new URL(url);
+  if (u.protocol === "redis:" && u.hostname.endsWith(".upstash.io")) u.protocol = "rediss:";
+  return u.toString();
+}
+
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().default(4000),
@@ -22,7 +28,8 @@ const schema = z.object({
   /** Role that migrations grant table privileges to. */
   APP_DB_ROLE: z.string().regex(/^[a-z_][a-z0-9_]*$/).default("vetledger_app"),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
-  REDIS_URL: z.string().url().default("redis://localhost:6379"),
+  /** Upstash only accepts TLS; its console shows `redis://` next to `--tls`, so upgrade that. */
+  REDIS_URL: z.string().url().default("redis://localhost:6379").transform(requireTlsForUpstash),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   ACCESS_TOKEN_TTL_SEC: z.coerce.number().int().min(60).default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(14),

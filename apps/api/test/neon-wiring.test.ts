@@ -65,3 +65,12 @@ describe("app role provisioning + RLS guard", () => {
     expect(ownerReport.enforced).toBe(false); // owner (or superuser) bypasses RLS -> guard refuses
   });
 });
+
+describe("REDIS_URL", () => {
+  it("upgrades a plain redis:// Upstash URL to TLS and leaves others alone", async () => {
+    const { requireTlsForUpstash } = await import("../src/config.js");
+    expect(requireTlsForUpstash("redis://default:pw@fine-cat-1.upstash.io:6379")).toBe("rediss://default:pw@fine-cat-1.upstash.io:6379");
+    expect(requireTlsForUpstash("rediss://default:pw@fine-cat-1.upstash.io:6379")).toBe("rediss://default:pw@fine-cat-1.upstash.io:6379");
+    expect(requireTlsForUpstash("redis://localhost:6379")).toBe("redis://localhost:6379");
+  });
+});

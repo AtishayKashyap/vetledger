@@ -34,7 +34,7 @@ Why the extra role? Both Neon strings log in as the database **owner**, and owne
 
 ## 2. Upstash: Redis
 1. Sign up at https://upstash.com and choose **Create Database**: type *Redis*, same region as Neon, free plan.
-2. Copy the **`rediss://…` URL** from the database page (Connect → "Redis URL"; it starts with `rediss://default:`).
+2. Copy the **Redis URL** from the database page. It must start with **`rediss://`** (two s: TLS). Upstash sometimes shows `redis-cli --tls -u redis://…`; the API upgrades an Upstash `redis://` URL to TLS automatically, and exits with a clear error if Redis doesn't answer.
 
 ## 3. Seed the demo database (GitHub Actions)
 Render's free plan has no shell, so the database is seeded from GitHub Actions.

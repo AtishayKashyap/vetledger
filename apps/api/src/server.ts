@@ -26,6 +26,15 @@ if (!rls.enforced) {
 }
 // BullMQ requires maxRetriesPerRequest: null on its connections.
 const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null });
+redis.on("error", (err) => logger.error({ err: err.message }, "redis connection error"));
+// Fail loudly instead of hanging before listen() when Redis is unreachable or misconfigured.
+await Promise.race([
+  redis.ping(),
+  new Promise((_, reject) => setTimeout(() => reject(new Error("Redis did not answer PING within 20 s; check REDIS_URL (Upstash needs rediss://)")), 20_000)),
+]).catch((err: Error) => {
+  logger.fatal({ err: err.message }, "cannot reach Redis");
+  process.exit(1);
+});
 const connection = { url: config.REDIS_URL };
 const reminderQueue = createReminderQueue(connection);
 const metrics = createMetrics();
