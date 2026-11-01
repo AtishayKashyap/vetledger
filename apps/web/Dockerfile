@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Build context: repository root.
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 RUN corepack enable
 WORKDIR /repo
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
