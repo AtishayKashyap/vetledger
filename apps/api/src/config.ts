@@ -26,6 +26,12 @@ const schema = z.object({
   RUN_WORKER: bool.default(true),
   REMINDER_WEBHOOK_URL: z.string().url().optional(),
   REMINDER_SCAN_EVERY_MS: z.coerce.number().int().min(1000).default(15 * 60 * 1000),
+  /**
+   * Seconds an idle worker blocks waiting for jobs before polling Redis again. The
+   * default 5 s is fine locally; 60 s on a metered Redis (Upstash free tier) cuts idle
+   * commands ~12x. Reminders aren't latency-sensitive.
+   */
+  WORKER_DRAIN_DELAY_SEC: z.coerce.number().int().min(1).max(600).default(5),
   RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(300),
   AUTH_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(10),
 });

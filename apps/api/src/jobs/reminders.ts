@@ -129,6 +129,8 @@ export interface ReminderWorkerOptions {
   logger: Logger;
   metrics: Metrics;
   scanEveryMs: number;
+  /** BullMQ drainDelay: how long an idle worker blocks before polling again. */
+  drainDelaySec?: number;
 }
 
 export async function startReminderWorker(o: ReminderWorkerOptions): Promise<Worker> {
@@ -148,7 +150,7 @@ export async function startReminderWorker(o: ReminderWorkerOptions): Promise<Wor
       o.metrics.remindersSent.inc({ outcome });
       return outcome;
     },
-    { connection: o.connection, concurrency: 5 },
+    { connection: o.connection, concurrency: 5, drainDelay: o.drainDelaySec ?? 5 },
   );
 
   worker.on("failed", (job, err) => {

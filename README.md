@@ -117,11 +117,14 @@ pnpm --filter @vetledger/web e2e             # Playwright; API must be running o
 
 ## Deploy for free
 
+Step-by-step guide: **[docs/DEPLOY.md](docs/DEPLOY.md)** (about 20 minutes, no credit card).
+
 | Piece | Free service |
 |---|---|
 | Postgres | [Neon](https://neon.tech). Run `deploy/init.sql` minus the `CREATE DATABASE`, and use the owner URL for `MIGRATION_DATABASE_URL`. |
 | Redis | [Upstash](https://upstash.com) (`rediss://` URL) |
 | API + worker | [Render](https://render.com) free web service via `render.yaml`. Migrations run on boot, behind an advisory lock. |
+| Demo data | GitHub Actions workflow **Reset demo database**: migrates and seeds, and can reset weekly |
 | Web | [Vercel](https://vercel.com): root `apps/web`. `vercel.json` rewrites `/api/*` to the Render URL, so the app stays **same-origin** (no CORS; the refresh cookie stays `SameSite=strict`). |
 | Traces/metrics | Grafana Cloud free tier (set `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_HEADERS`) |
 

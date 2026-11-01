@@ -1,0 +1,30 @@
+# Migrates and (re)seeds the hosted demo database, so the live demo always starts
+# from clean data with the demo accounts. Run it once after creating the database,
+# and it also resets weekly (visitors can change the data).
+# Needs the repository secret DEMO_MIGRATION_DATABASE_URL (Neon owner connection).
+name: Reset demo database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * 1"   # Mondays 02:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    if: ${{ vars.DEMO_DB_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    env:
+      MIGRATION_DATABASE_URL: ${{ secrets.DEMO_MIGRATION_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile --filter @vetledger/api...
+      - name: Check the secret is set
+        run: test -n "$MIGRATION_DATABASE_URL" || { echo "::error::Add the DEMO_MIGRATION_DATABASE_URL secret first (docs/DEPLOY.md)"; exit 1; }
+      - run: pnpm db:migrate
+      - run: pnpm db:seed

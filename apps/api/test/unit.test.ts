@@ -59,7 +59,8 @@ describe("helpers", () => {
   it("config fails fast with every problem listed", () => {
     expect(() => loadConfig({ DATABASE_URL: "nope", JWT_SECRET: "short" })).toThrow(/DATABASE_URL[\s\S]*JWT_SECRET/);
     const c = loadConfig({ DATABASE_URL: "postgres://a@b/c", JWT_SECRET: "x".repeat(32), RUN_WORKER: "0", COOKIE_SECURE: "true" });
-    expect(c).toMatchObject({ RUN_WORKER: false, COOKIE_SECURE: true, PORT: 4000 });
+    expect(c).toMatchObject({ RUN_WORKER: false, COOKIE_SECURE: true, PORT: 4000, WORKER_DRAIN_DELAY_SEC: 5 });
+    expect(() => loadConfig({ DATABASE_URL: "postgres://a@b/c", JWT_SECRET: "x".repeat(32), WORKER_DRAIN_DELAY_SEC: "0" })).toThrow(/WORKER_DRAIN_DELAY_SEC/);
   });
 
   it("GraphQL depth limit rejects deeply nested queries", () => {

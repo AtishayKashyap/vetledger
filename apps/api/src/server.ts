@@ -25,6 +25,7 @@ const worker = config.RUN_WORKER
       db, queue: reminderQueue, connection, metrics, logger,
       deliver: webhookDeliver(config.REMINDER_WEBHOOK_URL, logger),
       scanEveryMs: config.REMINDER_SCAN_EVERY_MS,
+      drainDelaySec: config.WORKER_DRAIN_DELAY_SEC,
     })
   : null;
 

@@ -1,5 +1,5 @@
 # Render Blueprint, free tier. External free services:
-#   Postgres -> Neon (create roles vetledger_owner + vetledger_app, see README)
+#   Postgres -> Neon (run deploy/neon-setup.sql once; see docs/DEPLOY.md)
 #   Redis    -> Upstash (use the rediss:// URL)
 # One web service runs API + reminder worker (RUN_WORKER=true), so only one free
 # instance is needed. Free instances sleep when idle; BullMQ's job scheduler state lives
@@ -18,8 +18,11 @@ services:
       - { key: REDIS_URL, sync: false }
       - { key: JWT_SECRET, generateValue: true }
       - { key: COOKIE_SECURE, value: "true" }
-      - { key: TRUST_PROXY, value: "1" }
+      # Browser -> Vercel rewrite -> Render proxy -> app: trust both hops so rate
+      # limiting keys on the real client IP, not Vercel's.
+      - { key: TRUST_PROXY, value: "2" }
       - { key: RUN_WORKER, value: "true" }
+      - { key: WORKER_DRAIN_DELAY_SEC, value: "60" }   # stay inside Upstash's free quota
       - { key: REMINDER_WEBHOOK_URL, sync: false }
       - { key: OTEL_EXPORTER_OTLP_ENDPOINT, sync: false }
       - { key: OTEL_EXPORTER_OTLP_HEADERS, sync: false }
