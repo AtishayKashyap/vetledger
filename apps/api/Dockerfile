@@ -16,6 +16,10 @@ RUN pnpm --filter @vetledger/api build \
 
 FROM node:22-alpine
 ENV NODE_ENV=production
+# The runtime only needs `node`. Removing npm/corepack drops their bundled dependency
+# tree (flagged by Trivy) and shrinks the attack surface of the production image.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 USER node
