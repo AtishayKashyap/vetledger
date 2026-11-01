@@ -52,7 +52,7 @@ Render's free plan has no shell, so the database is seeded from GitHub Actions.
    |---|---|
    | `DATABASE_URL` | Neon **pooled** string |
    | `DATABASE_URL_UNPOOLED` | Neon **direct** string |
-   | `APP_DB_PASSWORD` | Render generates one: **copy it into the `DEMO_APP_DB_PASSWORD` GitHub secret too** (or replace it with yours) |
+   | `APP_DB_PASSWORD` | the **same** password you saved as the `DEMO_APP_DB_PASSWORD` GitHub secret (migrations created the role with it) |
    | `REDIS_URL` | the Upstash `rediss://` URL |
    | `REMINDER_WEBHOOK_URL` | leave empty (reminders are logged), or use a free https://webhook.site URL to watch them arrive |
    | `OTEL_EXPORTER_OTLP_ENDPOINT` / `_HEADERS` | leave empty |

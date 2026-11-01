@@ -15,7 +15,7 @@ services:
     envVars:
       - { key: DATABASE_URL, sync: false }           # Neon pooled URL (owner creds are fine)
       - { key: DATABASE_URL_UNPOOLED, sync: false }  # Neon direct URL: migrations on boot
-      - { key: APP_DB_PASSWORD, generateValue: true } # API connects as vetledger_app (RLS enforced)
+      - { key: APP_DB_PASSWORD, sync: false }        # same value as the DEMO_APP_DB_PASSWORD GitHub secret; API connects as vetledger_app
       - { key: REDIS_URL, sync: false }
       - { key: JWT_SECRET, generateValue: true }
       - { key: COOKIE_SECURE, value: "true" }
