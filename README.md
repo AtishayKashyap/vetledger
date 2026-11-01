@@ -105,7 +105,7 @@ pnpm lint && pnpm typecheck && pnpm test     # needs Postgres + Redis (see test/
 pnpm --filter @vetledger/web e2e             # Playwright; API must be running on :4000
 ```
 
-- **55 tests**: 44 API integration and unit tests (88% line coverage, with a CI gate), 7 web, and 4 shared-contract tests. They run against **real Postgres and Redis**, not mocks, because RLS, row locks and `SKIP LOCKED` cannot be meaningfully mocked.
+- **59 tests**: 48 API integration and unit tests (92% line coverage, with a CI gate), 7 web, and 4 shared-contract tests. They run against **real Postgres and Redis**, not mocks, because RLS, row locks and `SKIP LOCKED` cannot be meaningfully mocked.
 - **3 Playwright end-to-end tests**. The first follows a vet through login, registering a patient, vaccinating it, and seeing the booster reminder scheduled; the session then survives a reload. The others cover RBAC in the UI and validation messages.
 - The tests found real bugs during development, and each now has a regression test. For example, `animalCreateSchema.partial()` kept the `sex` default, so a weight-only PATCH silently reset an animal's sex.
 - CI runs lint, typecheck, tests (with service containers), build, `pnpm audit`, the Playwright e2e tests, Docker image builds, a full `docker compose` smoke test (login through nginx), and a Trivy scan.
