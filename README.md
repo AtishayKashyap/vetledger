@@ -5,6 +5,8 @@
 [![CI](https://github.com/AtishayKashyap/vetledger/actions/workflows/ci.yml/badge.svg)](https://github.com/AtishayKashyap/vetledger/actions/workflows/ci.yml)
 ![stack](https://img.shields.io/badge/stack-TypeScript_·_Express_5_·_GraphQL_·_PostgreSQL_16_·_Redis_·_React_19-0e7490)
 
+**[▶ Live demo](https://vetledger.vercel.app)**: log in as `vet@sunrise.vet`, password `vetledger-demo` (try `vet@deccan.vet` in a private window to see a second clinic). Hosted on free tiers (Vercel, Render, Neon, Upstash), so the first request after a quiet spell can take ~50 s while the API wakes up. Feel free to change things; the demo data can be reset at any time.
+
 ![Dashboard](docs/screenshots/dashboard-light.png)
 
 ## What's interesting here
@@ -121,7 +123,7 @@ Step-by-step guide: **[docs/DEPLOY.md](docs/DEPLOY.md)** (about 20 minutes, no c
 
 | Piece | Free service |
 |---|---|
-| Postgres | [Neon](https://neon.tech). Run `deploy/init.sql` minus the `CREATE DATABASE`, and use the owner URL for `MIGRATION_DATABASE_URL`. |
+| Postgres | [Neon](https://neon.tech): pooled URL for the API, direct URL for migrations, and a separate non-owner role so RLS applies ([details](docs/DEPLOY.md)). |
 | Redis | [Upstash](https://upstash.com) (`rediss://` URL) |
 | API + worker | [Render](https://render.com) free web service via `render.yaml`. Migrations run on boot, behind an advisory lock. |
 | Demo data | GitHub Actions workflow **Reset demo database**: migrates and seeds, and can reset weekly |
