@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Build context: repository root (pnpm workspace).
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 RUN corepack enable
 WORKDIR /repo
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -14,7 +14,7 @@ RUN pnpm --filter @vetledger/api build \
  && pnpm --filter @vetledger/api deploy --prod --legacy /out \
  && cp -r apps/api/dist /out/dist
 
-FROM node:22-alpine
+FROM node:26-alpine
 ENV NODE_ENV=production
 # The runtime only needs `node`. Removing npm/corepack drops their bundled dependency
 # tree (flagged by Trivy) and shrinks the attack surface of the production image.
