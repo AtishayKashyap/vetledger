@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Semantic tokens: components use these, so dark mode is one override block. */
+@theme {
+  --color-bg: #f5f7f8;
+  --color-surface: #ffffff;
+  --color-subtle: #eef2f4;
+  --color-line: #dfe5e9;
+  --color-ink: #10181d;
+  --color-muted: #5a6b75;
+  --color-brand: #0e7490;
+  --color-brand-ink: #ffffff;
+  --color-ok: #15803d;
+  --color-ok-bg: #e6f6ec;
+  --color-warn: #a16207;
+  --color-warn-bg: #fdf4dc;
+  --color-bad: #c2410c;
+  --color-bad-bg: #fdebe2;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b1114;
+    --color-surface: #121a1f;
+    --color-subtle: #18232a;
+    --color-line: #24323b;
+    --color-ink: #e5edf1;
+    --color-muted: #8ea2ad;
+    --color-brand: #22b8d6;
+    --color-brand-ink: #062a33;
+    --color-ok: #4ade80;
+    --color-ok-bg: #0f2a1a;
+    --color-warn: #facc15;
+    --color-warn-bg: #2d2509;
+    --color-bad: #fb923c;
+    --color-bad-bg: #33190c;
+    color-scheme: dark;
+  }
+}
+
+body {
+  @apply bg-bg text-ink font-sans antialiased;
+  font-size: 14px;
+}
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-brand;
+}
