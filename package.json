@@ -17,13 +17,13 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@neon/config": "1.10.0",
-    "@neon/env": "1.6.8",
+    "@neon/config": "1.11.3",
+    "@neon/env": "1.6.15",
     "autocannon": "8.0.0",
     "eslint": "10.14.0",
     "eslint-plugin-react-hooks": "7.1.1",
-    "globals": "17.13.0",
-    "typescript": "5.9.3",
+    "globals": "17.14.0",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.72.1"
   }
 }
