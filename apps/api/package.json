@@ -20,7 +20,7 @@
     "@opentelemetry/sdk-node": "0.300.0",
     "@vetledger/shared": "workspace:*",
     "argon2": "0.45.1",
-    "bullmq": "6.5.3",
+    "bullmq": "6.7.0",
     "cookie-parser": "1.4.7",
     "dataloader": "2.2.3",
     "express": "5.3.0",
