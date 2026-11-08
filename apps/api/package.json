@@ -19,7 +19,7 @@
     "@opentelemetry/auto-instrumentations-node": "0.82.0",
     "@opentelemetry/sdk-node": "0.300.0",
     "@vetledger/shared": "workspace:*",
-    "argon2": "0.45.1",
+    "argon2": "0.45.2",
     "bullmq": "6.5.3",
     "cookie-parser": "1.4.7",
     "dataloader": "2.2.3",
